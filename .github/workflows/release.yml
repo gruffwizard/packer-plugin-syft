@@ -19,13 +19,32 @@ jobs:
       -
         name: Set up Go
         uses: actions/setup-go@v5
-      
-      - name: Import GPG private key
+
+      - name: Setup GPG and import private key
         run: |
-          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
-          echo "GPG_TTY=$(tty)" >> $GITHUB_ENV # Set GPG_TTY for the current shell
+          # Create a dummy pinentry-program (to prevent gpg from looking for a graphical one)
+          # This sometimes resolves "No such file or directory" if gpg is looking for a GUI prompt
+          mkdir -p ~/.gnupg
+          echo "pinentry-program /usr/bin/true" > ~/.gnupg/gpg-agent.conf
+          chmod 600 ~/.gnupg/gpg-agent.conf
+
+          # Set permissions for the .gnupg directory
+          chmod 700 ~/.gnupg
+
+          # Start gpg-agent and export its environment variables
+          # This ensures gpg commands use the running agent
+          eval $(gpg-agent --daemon --no-grab --write-env-file ~/.gnupg/gpg-agent.env)
+          # Source the agent environment variables for the current shell
+          . ~/.gnupg/gpg-agent.env
+
+          # Import the private key in batch mode
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --yes --import
+
+          # List keys to verify import (optional, for debugging)
+          gpg --list-secret-keys --fingerprint
         env:
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE_SECRET }}
+          GPG_TTY: $(tty)
       -
         name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
