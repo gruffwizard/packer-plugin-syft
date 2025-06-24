@@ -19,6 +19,13 @@ jobs:
       -
         name: Set up Go
         uses: actions/setup-go@v5
+      
+      - name: Import GPG private key
+        run: |
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+          echo "GPG_TTY=$(tty)" >> $GITHUB_ENV # Set GPG_TTY for the current shell
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE_SECRET }}
       -
         name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
