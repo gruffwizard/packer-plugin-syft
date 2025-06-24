@@ -33,3 +33,4 @@ jobs:
           # Your GoReleaser Pro key, if you are using the 'goreleaser-pro' distribution
           # GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
           API_VERSION: 1A
+          GPG_FINGERPRINT: ${{ secrets.GPG_FINGERPRINT }}
