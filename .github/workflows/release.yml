@@ -22,29 +22,32 @@ jobs:
 
       - name: Setup GPG and import private key
         run: |
-          # Create a dummy pinentry-program (to prevent gpg from looking for a graphical one)
-          # This sometimes resolves "No such file or directory" if gpg is looking for a GUI prompt
+          # Ensure .gnupg directory exists and has correct permissions
           mkdir -p ~/.gnupg
+          chmod 700 ~/.gnupg
+
+          # Configure the *existing* gpg-agent to use a dummy pinentry-program
+          # This prevents gpg from looking for a graphical or interactive prompt
           echo "pinentry-program /usr/bin/true" > ~/.gnupg/gpg-agent.conf
           chmod 600 ~/.gnupg/gpg-agent.conf
 
-          # Set permissions for the .gnupg directory
-          chmod 700 ~/.gnupg
+          # Set GPG_TTY for the current shell (optional, but good practice for non-interactive)
+          # This helps gpg commands in this shell context to behave non-interactively
+          echo "GPG_TTY=$(tty)" >> $GITHUB_ENV
 
-          # Start gpg-agent and export its environment variables
-          # This ensures gpg commands use the running agent
-          eval $(gpg-agent --daemon --no-grab --write-env-file ~/.gnupg/gpg-agent.env)
-          # Source the agent environment variables for the current shell
-          . ~/.gnupg/gpg-agent.env
-
-          # Import the private key in batch mode
+          # Import the private key into the existing gpg-agent's keyring
+          # The GPG_PASSPHRASE env var will be picked up by the gpg-agent via this step's env
           echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --yes --import
 
-          # List keys to verify import (optional, for debugging)
+          # Refresh the agent's cache after import
+          # This might not be strictly necessary, but can help ensure the agent knows about the new key
+          gpg-connect-agent reloadagent /bye
+
+          # List secret keys to verify import (optional, for debugging)
           gpg --list-secret-keys --fingerprint
         env:
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE_SECRET }}
-          GPG_TTY: $(tty)
+
       -
         name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
