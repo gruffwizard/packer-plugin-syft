@@ -22,3 +22,16 @@ test:
 .PHONY: fmt
 fmt:
 	go fmt ./...
+
+.PHONY: plugin-check
+
+plugin-check:
+	@echo "Running plugin checks..."
+	# Add the actual commands here that you want to run for plugin checking.
+	# For example, if you have a custom Go program to run checks:
+	# go run ./internal/plugins/checker/main.go
+	# Or a shell script:
+	# ./scripts/check-plugins.sh
+	@echo "Plugin checks complete."
+
+# ... other Makefile targets (build, test, clean, etc.) ...
