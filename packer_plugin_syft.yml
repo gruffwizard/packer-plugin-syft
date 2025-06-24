@@ -1,0 +1,73 @@
+project_name: packer-plugin-syft
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: plugin
+    main: .
+    binary: packer-plugin-syft
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.Version={{.Version}}
+      - -X main.VersionPrerelease={{.Prerelease}}
+
+archives:
+  - id: plugin-archive
+    builds:
+      - plugin
+    format: zip
+    name_template: "{{ .ProjectName }}_v{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: "{{ .ProjectName }}_v{{ .Version }}_SHA256SUMS"
+
+release:
+  github:
+    owner: gruffwizard
+    name: packer-plugin-syft
+  draft: false
+  prerelease: auto
+  name_template: "v{{ .Version }}"
+  header: |
+    ## Packer Plugin Syft v{{ .Version }}
+    
+    This release contains the following binaries:
+    
+  footer: |
+    ## Installation
+    
+    ### Automatic Installation (Packer 1.7+)
+    
+    Add the following to your Packer template:
+    
+    ```hcl
+    packer {
+      required_plugins {
+        syft = {
+          version = ">= {{ .Version }}"
+          source  = "github.com/gruffwizard/syft"
+        }
+      }
+    }
+    ```
+    
+    ### Manual Installation
+    
+    Download the appropriate binary for your platform and place it in your Packer plugins directory.
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^ci:'
